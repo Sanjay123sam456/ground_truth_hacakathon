@@ -85,9 +85,7 @@ I aimed to build a *production-ready, end-to-end pipeline*.
 
 ---
 
-## 7. How to Run  
-
-*1️⃣ Clone Repository*  
+## 7. How to Run    
 git clone https://github.com/Sanjay123sam456/ground_truth_hacakathon.git  
 cd ground_truth_hacakathon  
 pip3 install -r requirements.txt  
