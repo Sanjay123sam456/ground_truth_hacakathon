@@ -90,3 +90,6 @@ I aimed to build a *production-ready, end-to-end pipeline*.
 *1️⃣ Clone Repository*  
 git clone https://github.com/Sanjay123sam456/ground_truth_hacakathon.git  
 cd ground_truth_hacakathon  
+pip3 install -r requirements.txt  
+streamlit run datainsight.py  
+
