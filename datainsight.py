@@ -3,7 +3,6 @@ import io
 import base64
 import json
 import tempfile
-import requests
 from typing import Optional
 
 import pandas as pd
@@ -13,34 +12,36 @@ from weasyprint import HTML
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import google.generativeai as genai
 
 load_dotenv()
 
-OPENROUTER_KEY_ENV = os.getenv("OPENROUTER_API_KEY", "")
-DEFAULT_OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
+GEMINI_API_KEY_ENV = os.getenv("GEMINI_API_KEY", "")
+DEFAULT_GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 LLM_INPUT_CHAR_LIMIT = 60_000
 
 # -----------------------------
-# OpenRouter API call
+# Google Gemini API call
 # -----------------------------
-def call_openrouter(api_key: str, model: str, messages: list, site_url="http://localhost:8501", site_title="Streamlit App", timeout=60) -> str:
+def call_gemini(api_key: str, model: str, messages: list, timeout=60) -> str:
     if not api_key:
-        raise RuntimeError("No OpenRouter API key provided.")
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "HTTP-Referer": site_url,
-        "X-Title": site_title,
-        "Content-Type": "application/json"
-    }
-    payload = {"model": model, "messages": messages, "temperature": 0.2, "max_tokens": 4000}
-    resp = requests.post(url=url, headers=headers, data=json.dumps(payload), timeout=timeout)
-    resp.raise_for_status()
-    j = resp.json()
-    try:
-        return j["choices"][0]["message"]["content"]
-    except Exception:
-        return j.get("output", {}).get("text", "") or j.get("choices", [{}])[0].get("text", "") or ""
+        raise RuntimeError("No Gemini API key provided.")
+    genai.configure(api_key=api_key)
+    gemini_model = genai.GenerativeModel(
+        model_name=model,
+        generation_config={"temperature": 0.2, "max_output_tokens": 4000},
+    )
+    # Convert messages to Gemini format
+    system_msg = ""
+    user_msg = ""
+    for msg in messages:
+        if msg["role"] == "system":
+            system_msg = msg["content"]
+        elif msg["role"] == "user":
+            user_msg = msg["content"]
+    prompt = f"{system_msg}\n\n{user_msg}" if system_msg else user_msg
+    response = gemini_model.generate_content(prompt)
+    return response.text
 
 # -----------------------------
 # Smart data chunking for LLM
@@ -511,7 +512,7 @@ def create_pdf_weasyprint(title: str, subtitle: str, markdown_text: str, kpis: d
         {charts_html}
         {rec_html}
         
-        <div class='footer'>Generated with OpenRouter AI Analytics | Confidential Executive Report</div>
+        <div class='footer'>Generated with Google Gemini AI Analytics | Confidential Executive Report</div>
     </body>
     </html>
     """
@@ -535,8 +536,8 @@ st.markdown("""
 
 # Sidebar
 st.sidebar.header("⚙️ Configuration")
-user_api_key = st.sidebar.text_input("OpenRouter API Key", value=OPENROUTER_KEY_ENV, type="password")
-model_name = st.sidebar.text_input("Model", value=DEFAULT_OPENROUTER_MODEL)
+user_api_key = st.sidebar.text_input("Gemini API Key", value=GEMINI_API_KEY_ENV, type="password")
+model_name = st.sidebar.text_input("Model", value=DEFAULT_GEMINI_MODEL)
 st.sidebar.markdown("---")
 st.sidebar.info("💡 **Tip**: Use filters to focus your analysis on specific data segments")
 
@@ -675,14 +676,14 @@ if generate:
         data_text = prepare_data_for_llm(filtered_df, max_chars=max_chars)
         full_user_content = (user_prompt + "\n\n" + data_text)[:LLM_INPUT_CHAR_LIMIT]
         
-        api_key_to_use = user_api_key or OPENROUTER_KEY_ENV
+        api_key_to_use = user_api_key or GEMINI_API_KEY_ENV
         if not api_key_to_use:
-            st.error("❌ Please provide an OpenRouter API key in the sidebar")
+            st.error("❌ Please provide a Gemini API key in the sidebar")
             st.stop()
         
         try:
             with st.spinner("🤖 AI is analyzing your data..."):
-                assistant_text = call_openrouter(
+                assistant_text = call_gemini(
                     api_key=api_key_to_use,
                     model=model_name,
                     messages=[
