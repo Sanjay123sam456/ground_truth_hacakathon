@@ -38,7 +38,7 @@ I aimed to build a *production-ready, end-to-end pipeline*.
 - *📝 Data Summary:* Filtered data converted into short text summary for AI context.  
 - *🤖 Generative AI:*  
   - System + user prompt built with filtered data  
-  - Sent to *OpenAI LLM* via requests.post  
+  - Sent to *Google Gemini LLM* via google-generativeai SDK  
   - Returns insights in *Markdown format*  
 - *📄 Reporting:*  
   - Markdown → HTML (markdown2)  
@@ -54,7 +54,7 @@ I aimed to build a *production-ready, end-to-end pipeline*.
 |------------------------|---------------------------------|
 | 🐍 Language            | Above Python 3.1                |
 | 📊 Data Engine          | Pandas                         |
-| 🤖 AI Model            | OpenAI LLM (via openrouter)       |
+| 🤖 AI Model            | Google Gemini (via google-generativeai) |
 | 📝 Markdown → HTML      | markdown2                        |
 | 🖨 PDF Generation       | WeasyPrint                       |
 | 🌐 Web Interface        | Streamlit                        |
